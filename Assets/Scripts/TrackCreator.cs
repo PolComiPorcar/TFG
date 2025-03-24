@@ -14,6 +14,7 @@ public class TrackCreator : MonoBehaviour
 
     private Track track;
     private TrackDrawer drawer;
+    private bool showPoints = true;
 
     private void Start()
     {
@@ -27,7 +28,14 @@ public class TrackCreator : MonoBehaviour
 
         track = new Track(seed);
         track.CreateFullTrack(initialNumberOfPoints, width, height);
-        drawer.DrawCurvedPoints(track);
+        //drawer.DrawPoints(track, true);
+        drawer.DrawCurvedPoints(track, showPoints);
+    }
+
+    public void ToggleShowPoints()
+    {
+        showPoints = !showPoints;
+        drawer.DrawCurvedPoints(track, showPoints);
     }
 
     /*public void Update()

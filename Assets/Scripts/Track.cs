@@ -4,6 +4,8 @@ using System.Collections.Generic;
 public class Track
 {
     private List<Vector2> _track = new();
+    private List<Vector2> _trackCurvePoints = new();
+    private int _seed;
 
     private const float MIN_CURVE_PERCENTAGE_RANGE = 0.1f;
     private const float MAX_CURVE_PERCENTAGE_RANGE = 0.4f;
@@ -11,11 +13,12 @@ public class Track
     public Track(int seed) 
     {
         Random.InitState(seed);
+        _seed = seed;
     }
 
-    public List<Vector2> Points
+    public List<Vector2> CurvePoints
     {
-        get { return _track; }
+        get { return _trackCurvePoints; }
     }
     public Vector2 this[int i] {
         get { return _track[i]; }
@@ -28,21 +31,47 @@ public class Track
     public void CreateFullTrack(int nInitialPoints, float width, float height)
     {
         CreateRandomPoints(nInitialPoints, width, height);
-        ConstructConvexHull();
+        /*ConstructConvexHull();*/
+
+        //_track = TSP.Construct(_track, _seed);
+
+        _track = TSP.ConstructPlanarTSP(_track);
+
         CreateTrackFromHull();
+
+        //Debug.Log(GetDisplacementFromCenter());
     }
 
-    public void CreateRandomPoints(int numberOfPoints, float width, float height)
+    public void CreateRandomPoints(int numberOfPoints, float width, float height, float minDistBetweenPoints = 1f)
     {
         _track.Clear();
 
         for (int i = 0; i < numberOfPoints; i++)
         {
-            float x_value = Random.Range(-width / 2f, width / 2f);
-            float y_value = Random.Range(-height / 2f, height / 2f);
+            bool isPointAcceptable = false;
+            Vector2 point = Vector2.zero;
 
-            _track.Add(new Vector2(x_value, y_value));
+            while (!isPointAcceptable)
+            {
+                float x_value = Random.Range(-width / 2f, width / 2f);
+                float y_value = Random.Range(-height / 2f, height / 2f);
+                point = new Vector2(x_value, y_value);
+
+                isPointAcceptable = IsPointWithinMinDistance(point, _track, minDistBetweenPoints);
+            }
+
+            _track.Add(point);
         }
+    }
+
+    private bool IsPointWithinMinDistance(Vector2 point, List<Vector2> pointsToCompare, float minDistThreshold)
+    {
+        for (int i = 0; i < pointsToCompare.Count; i++)
+        {
+            if (Vector2.Distance(point, pointsToCompare[i]) < minDistThreshold) return false;
+        }
+
+        return true;
     }
 
     public void ConstructConvexHull()
@@ -52,25 +81,22 @@ public class Track
 
     public void CreateTrackFromHull()
     {
-        List<Vector2> pointsCurved = new();
         _track.Add(_track[0]);
 
         for (int i = 0; i < _track.Count - 1; i++)
         {
             // Inner point between the segment (tangent point of the curve)
             Vector2 innerPoint = CalculateCurvePoint(_track[i], _track[i + 1], MIN_CURVE_PERCENTAGE_RANGE, MAX_CURVE_PERCENTAGE_RANGE);
-            pointsCurved.Add(innerPoint);
+            _trackCurvePoints.Add(innerPoint);
 
             // Outer point between the segment (tangent point of the curve)
             Vector2 outerPoint = CalculateCurvePoint(_track[i + 1], _track[i], MIN_CURVE_PERCENTAGE_RANGE, MAX_CURVE_PERCENTAGE_RANGE);
-            pointsCurved.Add(outerPoint);
+            _trackCurvePoints.Add(outerPoint);
 
-            pointsCurved.Add(_track[i + 1]);
+            _trackCurvePoints.Add(_track[i + 1]);
         }
 
-        pointsCurved.Add(pointsCurved[0]);
-
-        _track = pointsCurved;
+        _trackCurvePoints.Add(_trackCurvePoints[0]);
     }
 
     private Vector2 CalculateCurvePoint(Vector2 p0, Vector2 p1, float minPercentageRange, float maxPercentageRange)
@@ -78,5 +104,17 @@ public class Track
         float percentage = Random.Range(minPercentageRange, maxPercentageRange);
 
         return p0 + (p1 - p0) * percentage;
+    }
+
+    private Vector2 GetDisplacementFromCenter()
+    {
+        Vector2 displacementFromCenter = Vector2.zero;
+
+        for (int i = 0; i < _track.Count; i++)
+        {
+            displacementFromCenter += _track[i];
+        }
+
+        return displacementFromCenter / _track.Count;
     }
 }

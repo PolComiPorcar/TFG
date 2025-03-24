@@ -5,6 +5,7 @@ using UnityEngine;
 public class TrackDrawer : MonoBehaviour
 {
     [SerializeField] GameObject pointPrefab;
+    [SerializeField] GameObject controlPointPrefab;
 
     private LineRenderer lineRenderer;
     private List<GameObject> drawnPoints = new();
@@ -33,24 +34,34 @@ public class TrackDrawer : MonoBehaviour
         }
     }
 
-    public void DrawCurvedPoints(Track track)
+    public void DrawCurvedPoints(Track track, bool showPoints = true)
     {
         Clear();
 
-        if (track.Count % 3 != 1) throw new Exception("The track isn't well formatted to curve the points");
+        List<Vector2> trackCurvePoints = track.CurvePoints;
 
-        lineRenderer.positionCount = (track.Count / 3) * (curveResolution + 2);
-        lineRenderer.SetPosition(0, track[0]);
+        if (trackCurvePoints.Count % 3 != 1) throw new Exception("The track isn't well formatted to curve the points");
+
+        lineRenderer.positionCount = (trackCurvePoints.Count / 3) * (curveResolution + 2);
+        lineRenderer.SetPosition(0, trackCurvePoints[0]);
 
         int lineIndex = 0;
-        for (int i = 1; i < track.Count; i++)
+        for (int i = 1; i < trackCurvePoints.Count; i++)
         {
+            Vector3 pointPos = new Vector3(trackCurvePoints[i].x, trackCurvePoints[i].y, 0);
+
             if (i % 3 == 2) // track[i] is a control point, draw curve between i-1, i and i+1
             {
+                if (showPoints)
+                {
+                    GameObject newPoint = Instantiate(controlPointPrefab, pointPos, Quaternion.identity);
+                    drawnPoints.Add(newPoint);
+                }
+
                 for (int j = 0; j < curveResolution; j++)
                 {
                     float t = (float)(j + 1) / (curveResolution + 1);
-                    Vector2 curvePoint = QuadraticBezierCurve(track[i - 1], track[i], track[i + 1], t);
+                    Vector2 curvePoint = QuadraticBezierCurve(trackCurvePoints[i - 1], trackCurvePoints[i], trackCurvePoints[i + 1], t);
                     lineRenderer.SetPosition(lineIndex, curvePoint);
 
                     lineIndex++;
@@ -58,10 +69,12 @@ public class TrackDrawer : MonoBehaviour
             }
             else // Not a Bezier control point
             {
-                Vector3 pointPos = new Vector3(track[i].x, track[i].y, 0);
+                if (showPoints)
+                {
+                    GameObject newPoint = Instantiate(pointPrefab, pointPos, Quaternion.identity);
+                    drawnPoints.Add(newPoint);
+                }
 
-                GameObject newPoint = Instantiate(pointPrefab, pointPos, Quaternion.identity);
-                drawnPoints.Add(newPoint);
                 lineRenderer.SetPosition(lineIndex, pointPos);
                 lineIndex++;
             }
