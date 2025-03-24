@@ -11,6 +11,7 @@ public class TrackCreator : MonoBehaviour
     [SerializeField] int height = 9;
 
     [SerializeField] int initialNumberOfPoints = 10;
+    [Range(140, 180)] [SerializeField] int maxAngleThreshold = 160;
 
     private Track track;
     private TrackDrawer drawer;
@@ -27,7 +28,7 @@ public class TrackCreator : MonoBehaviour
         if (useRandomSeed) seed = new System.Random().Next(int.MinValue, int.MaxValue);
 
         track = new Track(seed);
-        track.CreateFullTrack(initialNumberOfPoints, width, height);
+        track.CreateFullTrack(initialNumberOfPoints, width, height, (float)maxAngleThreshold);
         //drawer.DrawPoints(track, true);
         drawer.DrawCurvedPoints(track, showPoints);
     }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public static class TSP
@@ -64,10 +65,8 @@ public static class TSP
         return best;
     }*/
 
-    public static List<Vector2> ConstructPlanarTSP(List<Vector2> points)
+    public static List<Vector2> ConstructPlanarTSP(List<Vector2> points, float maxAngleThreshold = 160f)
     {
-        const float maxAngleThreshold = 160f;
-
         // Step 1: Start with a convex hull of the points
         List<Vector2> hull = ConvexHull.Construct(points);
         List<Vector2> remainingPoints = points.Where(p => !hull.Contains(p)).ToList();
@@ -88,7 +87,6 @@ public static class TSP
                     float currentDist = Vector2.Distance(hull[i], hull[nextI]);
                     float newDist = Vector2.Distance(hull[i], point) + Vector2.Distance(point, hull[nextI]);
                     float insertionCost = newDist - currentDist;
-                    float angleFormed = Vector2.Angle(point - hull[i], hull[nextI] - point);
 
                     if (insertionCost < bestInsertionCost)
                     {
@@ -99,36 +97,50 @@ public static class TSP
                 }
             }
 
-            if (bestPointIndex == -1) throw new Exception("There is no point that creates an angle below the threshold: " + maxAngleThreshold);
-
             // Insert the best point
             hull.Insert(bestInsertionPos, remainingPoints[bestPointIndex]);
             remainingPoints.RemoveAt(bestPointIndex);
         }
 
-        int index, nextIndex, nextnextIndex;
-        float maxAngle = MaxAngleOfTrack(hull, out index);
-        nextIndex = (index + 1) % hull.Count;
-        nextnextIndex = (index + 2) % hull.Count;
-
-        Debug.Log("index: " + index + " (" + hull[index] + "), angleMax: " + maxAngle);
-
-        if (maxAngle > maxAngleThreshold)
-        {
-            if (Vector2.Distance(hull[index], hull[nextIndex]) < Vector2.Distance(hull[nextIndex], hull[nextnextIndex]))
-                Swap(hull, index, nextIndex); // swap i and i+1
-            else
-                Swap(hull, nextIndex, nextnextIndex); //swap i+1 and i+2
-        }
+        RemoveSteepAngles(hull, maxAngleThreshold);
 
         return hull;
     }
 
+    private static void RemoveSteepAngles(List<Vector2> points, float maxAngleThreshold = 160f)
+    {
+        float angle;
+        int index;
+        (angle, index) = SteepestAngleOfTrack(points);
+
+        int totalPointsEliminated = 0; //DEBUG ONLY
+        while (angle > maxAngleThreshold)
+        {
+            totalPointsEliminated++;
+            //Debug.Log("index: " + index + " (" + points[index] + "), angleMax: " + maxAngle);
+
+            int nextIndex = (index + 1) % points.Count;
+            points.RemoveAt(nextIndex); // Eliminem el punt que genera l'angle conflictiu.
+
+            (angle, index) = SteepestAngleOfTrack(points);
+        }
+
+        Debug.Log("Total steep points eliminated: " + totalPointsEliminated);
+
+        /*if (maxAngle > maxAngleThreshold)
+        {
+            if (Vector2.Distance(points[index], points[nextIndex]) < Vector2.Distance(points[nextIndex], points[nextnextIndex]))
+                Swap(points, index, nextIndex); // swap i and i+1
+            else
+                Swap(points, nextIndex, nextnextIndex); //swap i+1 and i+2
+        }*/
+    }
+
     // Retorna l'angle més gran entre els punts i l'index del primer punt que crea un angle amb i+1 i i+2 a la variable index
-    private static float MaxAngleOfTrack(List<Vector2> track, out int index)
+    private static (float angle, int index) SteepestAngleOfTrack(List<Vector2> track)
     {
         float maxAngle = float.NegativeInfinity;
-        index = 0;
+        int index = 0;
 
         for (int i = 0; i < track.Count; i++)
         {
@@ -136,15 +148,16 @@ public static class TSP
             int nextnextI = (i + 2) % track.Count;
 
             float angleFormed = Vector2.Angle(track[nextI] - track[i], track[nextnextI] - track[nextI]);
+            if (angleFormed < 90f) angleFormed = 180f - angleFormed; // Relativitzem l'angle
 
-            if (angleFormed > maxAngle)
+            if (angleFormed > maxAngle) 
             {
                 maxAngle = angleFormed;
                 index = i;
             }
         }
 
-        return maxAngle;
+        return (maxAngle, index);
     }
 
     private static float MeasureLength(List<Vector2> points)

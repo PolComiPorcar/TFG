@@ -28,14 +28,14 @@ public class Track
         get { return _track.Count; }
     }
 
-    public void CreateFullTrack(int nInitialPoints, float width, float height)
+    public void CreateFullTrack(int nInitialPoints, float width, float height, float maxAngleThreshold)
     {
         CreateRandomPoints(nInitialPoints, width, height);
         /*ConstructConvexHull();*/
 
         //_track = TSP.Construct(_track, _seed);
 
-        _track = TSP.ConstructPlanarTSP(_track);
+        _track = TSP.ConstructPlanarTSP(_track, maxAngleThreshold);
 
         CreateTrackFromHull();
 

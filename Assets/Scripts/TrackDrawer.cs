@@ -45,6 +45,10 @@ public class TrackDrawer : MonoBehaviour
         lineRenderer.positionCount = (trackCurvePoints.Count / 3) * (curveResolution + 2);
         lineRenderer.SetPosition(0, trackCurvePoints[0]);
 
+        print("0: " + trackCurvePoints[0]);
+        print("last: " + trackCurvePoints[trackCurvePoints.Count - 1]);
+        print("last2: " + trackCurvePoints[trackCurvePoints.Count - 2]);
+
         int lineIndex = 0;
         for (int i = 1; i < trackCurvePoints.Count; i++)
         {
