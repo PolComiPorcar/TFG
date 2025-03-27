@@ -15,11 +15,13 @@ public class TrackCreator : MonoBehaviour
 
     private Track track;
     private TrackDrawer drawer;
-    private bool showPoints = true;
+    private TrackCollider trackCollider;
+    private bool showPoints = false;
 
     private void Start()
     {
         drawer = GetComponent<TrackDrawer>();
+        trackCollider = GetComponent<TrackCollider>();
     }
 
     public void CreateTrack()
@@ -31,6 +33,7 @@ public class TrackCreator : MonoBehaviour
         track.CreateFullTrack(initialNumberOfPoints, width, height, (float)maxAngleThreshold);
         //drawer.DrawPoints(track, true);
         drawer.DrawCurvedPoints(track, showPoints);
+        trackCollider.GenerateTrackCollider();
     }
 
     public void ToggleShowPoints()
@@ -38,13 +41,4 @@ public class TrackCreator : MonoBehaviour
         showPoints = !showPoints;
         drawer.DrawCurvedPoints(track, showPoints);
     }
-
-    /*public void Update()
-    {
-        if (testPoint != Vector2.zero)
-        {
-            points[points.Count - 1] = QuadraticBezierCurve(points[points.Count - 3], points[1], points[points.Count - 2], t);
-            Draw();
-        }
-    }*/
 }

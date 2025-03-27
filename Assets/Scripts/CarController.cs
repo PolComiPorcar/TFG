@@ -1,0 +1,69 @@
+using UnityEngine;
+
+public class CarController : MonoBehaviour
+{
+    [SerializeField] float moveSpeed = 50;
+    [SerializeField] float maxSpeed = 15;
+    [SerializeField] float drag = 0.98f;
+    [SerializeField] float steerAngle = 20;
+    [SerializeField] float traction = 1;
+
+    private Vector2 moveForce;
+
+    private Rigidbody2D rb;
+    private SpriteRenderer spriteRenderer;
+
+    void Start()
+    {
+        // Get the Rigidbody2D component
+        rb = GetComponent<Rigidbody2D>();
+        if (rb == null) Debug.LogError("Rigidbody2D component is missing! Please add it to the car.");
+        
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer == null) Debug.LogError("SpriteRenderer component is missing! Please add it to the car.");
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("Track"))
+            ChangeSpriteColor(Color.white);
+    }
+
+    void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("Track"))
+            ChangeSpriteColor(Color.red);
+    }
+
+    void FixedUpdate()
+    {
+        // Get input axes
+        float verticalInput = Input.GetAxis("Vertical");
+        float horizontalInput = Input.GetAxis("Horizontal");
+
+        // Apply movement force
+        Vector2 forwardDirection = transform.up;
+        moveForce += forwardDirection * moveSpeed * verticalInput * Time.fixedDeltaTime;
+
+        // Apply drag
+        moveForce *= drag;
+
+        // Clamp speed
+        moveForce = Vector2.ClampMagnitude(moveForce, maxSpeed);
+
+        // Traction
+        moveForce = Vector2.Lerp(moveForce.normalized, transform.up, traction * Time.fixedDeltaTime) * moveForce.magnitude;
+
+        // Move the car using Rigidbody2D
+        rb.linearVelocity = moveForce;
+
+        // Rotate the car
+        float rotationAmount = -horizontalInput * steerAngle * Time.fixedDeltaTime;
+        rb.MoveRotation(rb.rotation + rotationAmount);
+    }
+
+    private void ChangeSpriteColor(Color color)
+    {
+        spriteRenderer.color = color;
+    }
+}

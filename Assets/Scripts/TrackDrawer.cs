@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class TrackDrawer : MonoBehaviour
@@ -10,8 +11,8 @@ public class TrackDrawer : MonoBehaviour
     private LineRenderer lineRenderer;
     private List<GameObject> drawnPoints = new();
 
-    [Range(1, 99)]
-    [SerializeField] int curveResolution = 10;
+    [Range(1, 99)] [SerializeField] int curveResolution = 10;
+    [Range(0f, 0.01f)] [SerializeField] float simplifyCurveTolerance = 0.001f;
 
     void Start()
     {
@@ -20,7 +21,7 @@ public class TrackDrawer : MonoBehaviour
 
     public void DrawPoints(Track track, bool drawLines)
     {
-        Clear();
+        ClearDrawnPoints();
 
         if (drawLines) lineRenderer.positionCount = track.Count;
 
@@ -36,21 +37,21 @@ public class TrackDrawer : MonoBehaviour
 
     public void DrawCurvedPoints(Track track, bool showPoints = true)
     {
-        Clear();
+        ClearDrawnPoints();
 
         List<Vector2> trackCurvePoints = track.CurvePoints;
+        print("n curve points (no resolution): " + trackCurvePoints.Count);
 
         if (trackCurvePoints.Count % 3 != 1) throw new Exception("The track isn't well formatted to curve the points");
 
-        lineRenderer.positionCount = (trackCurvePoints.Count / 3) * (curveResolution + 2);
-        lineRenderer.SetPosition(0, trackCurvePoints[0]);
+        lineRenderer.positionCount = (trackCurvePoints.Count / 3) * (curveResolution + 2) + 2;
 
-        print("0: " + trackCurvePoints[0]);
+        /*print("0: " + trackCurvePoints[0]);
         print("last: " + trackCurvePoints[trackCurvePoints.Count - 1]);
-        print("last2: " + trackCurvePoints[trackCurvePoints.Count - 2]);
+        print("last2: " + trackCurvePoints[trackCurvePoints.Count - 2]);*/
 
         int lineIndex = 0;
-        for (int i = 1; i < trackCurvePoints.Count; i++)
+        for (int i = 0; i < trackCurvePoints.Count; i++)
         {
             Vector3 pointPos = new Vector3(trackCurvePoints[i].x, trackCurvePoints[i].y, 0);
 
@@ -83,6 +84,12 @@ public class TrackDrawer : MonoBehaviour
                 lineIndex++;
             }
         }
+
+        lineRenderer.SetPosition(lineIndex, new Vector3(trackCurvePoints[1].x, trackCurvePoints[1].y, 0));
+
+        print(lineRenderer.positionCount);
+        if (simplifyCurveTolerance > 0) lineRenderer.Simplify(simplifyCurveTolerance);
+        print(lineRenderer.positionCount);
     }
 
     private Vector2 QuadraticBezierCurve(Vector2 a, Vector2 b, Vector2 c, float t)
@@ -92,7 +99,7 @@ public class TrackDrawer : MonoBehaviour
         return oneMinusT * oneMinusT * a + 2 * oneMinusT * t * b + t * t * c;
     }
 
-    private void Clear()
+    private void ClearDrawnPoints()
     {
         foreach (GameObject point in drawnPoints)
         {
