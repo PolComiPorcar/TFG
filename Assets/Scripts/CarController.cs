@@ -2,16 +2,19 @@ using UnityEngine;
 
 public class CarController : MonoBehaviour
 {
-    [SerializeField] float moveSpeed = 50;
-    [SerializeField] float maxSpeed = 15;
+    [SerializeField] float moveSpeed = 5;
+    [SerializeField] float maxSpeed = 3;
     [SerializeField] float drag = 0.98f;
-    [SerializeField] float steerAngle = 20;
+    [SerializeField] float steerAngle = 200;
     [SerializeField] float traction = 1;
 
     private Vector2 moveForce;
 
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
+
+    protected float acceleration;
+    protected float steering;
 
     void Start()
     {
@@ -35,15 +38,17 @@ public class CarController : MonoBehaviour
             ChangeSpriteColor(Color.red);
     }
 
+    protected void SetInputs(float newAcceleration, float newSteering)
+    {
+        acceleration = newAcceleration;
+        steering = newSteering;
+    }
+
     void FixedUpdate()
     {
-        // Get input axes
-        float verticalInput = Input.GetAxis("Vertical");
-        float horizontalInput = Input.GetAxis("Horizontal");
-
         // Apply movement force
         Vector2 forwardDirection = transform.up;
-        moveForce += forwardDirection * moveSpeed * verticalInput * Time.fixedDeltaTime;
+        moveForce += moveSpeed * acceleration * Time.fixedDeltaTime * forwardDirection;
 
         // Apply drag
         moveForce *= drag;
@@ -58,7 +63,7 @@ public class CarController : MonoBehaviour
         rb.linearVelocity = moveForce;
 
         // Rotate the car
-        float rotationAmount = -horizontalInput * steerAngle * Time.fixedDeltaTime;
+        float rotationAmount = -steering * steerAngle * Time.fixedDeltaTime;
         rb.MoveRotation(rb.rotation + rotationAmount);
     }
 
