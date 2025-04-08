@@ -38,7 +38,7 @@ public class CarController : MonoBehaviour
             ChangeSpriteColor(Color.red);
     }
 
-    protected void SetInputs(float newAcceleration, float newSteering)
+    public void SetInputs(float newAcceleration, float newSteering)
     {
         acceleration = newAcceleration;
         steering = newSteering;
@@ -48,7 +48,7 @@ public class CarController : MonoBehaviour
     {
         // Apply movement force
         Vector2 forwardDirection = transform.up;
-        moveForce += moveSpeed * acceleration * Time.fixedDeltaTime * forwardDirection;
+        if (acceleration > 0) moveForce += moveSpeed * acceleration * Time.fixedDeltaTime * forwardDirection;
 
         // Apply drag
         moveForce *= drag;
