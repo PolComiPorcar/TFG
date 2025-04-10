@@ -13,8 +13,9 @@ public class CarController : MonoBehaviour
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
 
-    protected float acceleration;
-    protected float steering;
+    private float acceleration;
+    private float steering;
+
 
     void Start()
     {
@@ -62,9 +63,40 @@ public class CarController : MonoBehaviour
         // Move the car using Rigidbody2D
         rb.linearVelocity = moveForce;
 
+        //Debug.Log(moveForce.ToString());
+
         // Rotate the car
         float rotationAmount = -steering * steerAngle * Time.fixedDeltaTime;
         rb.MoveRotation(rb.rotation + rotationAmount);
+    }
+
+    void OnDrawGizmos()
+    {
+        if (!Application.isPlaying) return;
+
+        float forwardVelocity = Vector2.Dot(rb.linearVelocity, transform.up);
+        Vector2 forwardVelocityVector = transform.up * forwardVelocity;
+        Vector2 lateralVelocityVector = rb.linearVelocity - forwardVelocityVector;
+
+        // Draw total velocity vector
+        DrawLineGizmos(transform.position, rb.linearVelocity * 0.1f, Color.green);
+
+        // Draw forward velocity vector
+        //DrawLineGizmos(transform.position, forwardVelocityVector * 0.1f, Color.green);
+
+        // Also draw the lateral vector from the origin for clarity
+        DrawLineGizmos(transform.position, lateralVelocityVector * 0.1f, Color.blue);
+    }
+
+    private void DrawLineGizmos(Vector3 start, Vector2 direction, Color color)
+    {
+        if (direction.magnitude < 0.01f) return; // Don't draw tiny arrows
+
+        Vector3 end = start + (Vector3)direction;
+
+        // Draw the main line
+        Gizmos.color = color;
+        Gizmos.DrawLine(start, end);
     }
 
     private void ChangeSpriteColor(Color color)
