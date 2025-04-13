@@ -7,6 +7,12 @@ public class AIController : Agent
     public readonly float rewardOnCheckpoint = 1;
 
     private CarController carController;
+    private int checkpointsCrossed = 0;
+
+    public int CheckpointsCrossed
+    {
+        get { return checkpointsCrossed; }
+    }
 
     private void Start()
     {
@@ -22,6 +28,12 @@ public class AIController : Agent
 
     public void OnReachCheckpoint()
     {
+        checkpointsCrossed++;
         this.AddReward(rewardOnCheckpoint);
+    }
+
+    public void OnOutOfTrack()
+    {
+        //TODO
     }
 }

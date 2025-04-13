@@ -18,6 +18,11 @@ public class TrackDrawer : MonoBehaviour
         lineRenderer = GetComponent<LineRenderer>();
     }
 
+    /*public float LineWidth
+    {
+        get { lineRenderer.startWidth };
+    }*/
+
     public void DrawPoints(Track track, bool drawLines)
     {
         ClearDrawnPoints();
@@ -34,11 +39,15 @@ public class TrackDrawer : MonoBehaviour
         }
     }
 
-    public void DrawCurvedPoints(Track track, bool showPoints = true)
+    public void DrawCurvedPoints(Track track, float lineWidth, bool showPoints = true)
     {
         ClearDrawnPoints();
 
-        // Set line renderer
+        // Set line renderer width
+        lineRenderer.startWidth = lineWidth;
+        lineRenderer.endWidth = lineWidth;
+
+        // Set line renderer position count
         List<Vector2> trackCurveResolutionPoints = track.CurveResolutionPoints;
         trackCurveResolutionPoints.Add(new Vector3(trackCurveResolutionPoints[1].x, trackCurveResolutionPoints[1].y, 0));
         lineRenderer.positionCount = trackCurveResolutionPoints.Count;

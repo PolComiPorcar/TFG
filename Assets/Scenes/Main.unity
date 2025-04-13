@@ -787,6 +787,10 @@ PrefabInstance:
       propertyPath: 'm_BrainParameters.m_ActionSpec.BranchSizes.Array.data[1]'
       value: 3
       objectReference: {fileID: 0}
+    - target: {fileID: 4878827689624050074, guid: 22ba233834c2db94a823d0a36b1dd3ec, type: 3}
+      propertyPath: m_RayLength
+      value: 30
+      objectReference: {fileID: 0}
     - target: {fileID: 6959618244306119559, guid: 22ba233834c2db94a823d0a36b1dd3ec, type: 3}
       propertyPath: m_Name
       value: AI
@@ -797,11 +801,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7515699950628354346, guid: 22ba233834c2db94a823d0a36b1dd3ec, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.6
+      value: -4.45
       objectReference: {fileID: 0}
     - target: {fileID: 7515699950628354346, guid: 22ba233834c2db94a823d0a36b1dd3ec, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.24
+      value: -2.5
       objectReference: {fileID: 0}
     - target: {fileID: 7515699950628354346, guid: 22ba233834c2db94a823d0a36b1dd3ec, type: 3}
       propertyPath: m_LocalPosition.z
@@ -809,19 +813,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7515699950628354346, guid: 22ba233834c2db94a823d0a36b1dd3ec, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.75304717
       objectReference: {fileID: 0}
     - target: {fileID: 7515699950628354346, guid: 22ba233834c2db94a823d0a36b1dd3ec, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 7515699950628354346, guid: 22ba233834c2db94a823d0a36b1dd3ec, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 7515699950628354346, guid: 22ba233834c2db94a823d0a36b1dd3ec, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0.6579666
       objectReference: {fileID: 0}
     - target: {fileID: 7515699950628354346, guid: 22ba233834c2db94a823d0a36b1dd3ec, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -833,7 +837,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7515699950628354346, guid: 22ba233834c2db94a823d0a36b1dd3ec, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      value: -82.29
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -963,7 +967,7 @@ GameObject:
   - component: {fileID: 1050828820}
   m_Layer: 0
   m_Name: Race Controller
-  m_TagString: Track
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1338,7 +1342,7 @@ PolygonCollider2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1050828815}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Density: 1
   m_Material: {fileID: 0}
@@ -2303,6 +2307,7 @@ MonoBehaviour:
   width: 16
   height: 9
   initialNumberOfPoints: 15
+  trackWidth: 0.75
   curveResolution: 36
   maxAngleThreshold: 160
   checkpointPrefab: {fileID: 6954781617427206812, guid: 17ceb56a7266448419fb9dcbff0edfaa, type: 3}
@@ -2320,6 +2325,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f8c7025a0656e7448b90c4ddce5a4d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  borderPrefab: {fileID: 5569004573861775708, guid: cf5a8665f49239b4d978da47494292b3, type: 3}
 --- !u!1 &1129568504
 GameObject:
   m_ObjectHideFlags: 0

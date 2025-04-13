@@ -5,7 +5,8 @@ TagManager:
   serializedVersion: 3
   tags:
   - Car
-  - Track
+  - Checkpoint
+  - Track Border
   layers:
   - Default
   - TransparentFX
@@ -14,8 +15,8 @@ TagManager:
   - Water
   - UI
   - Car
-  - 
-  - 
+  - Checkpoint
+  - Track Border
   - 
   - 
   - 

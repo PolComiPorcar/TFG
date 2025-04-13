@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Rendering.UI;
+using TMPro;
 
 public class RaceController : MonoBehaviour
 {
@@ -10,6 +12,7 @@ public class RaceController : MonoBehaviour
     [SerializeField] int height = 9;
 
     [SerializeField] int initialNumberOfPoints = 10;
+    [SerializeField] float trackWidth = 1f;
     [Range(1, 99)][SerializeField] int curveResolution = 10;
     [Range(140, 180)][SerializeField] int maxAngleThreshold = 160;
 
@@ -23,7 +26,6 @@ public class RaceController : MonoBehaviour
     private TrackCollider trackCollider;
 
     private List<Checkpoint> checkpoints = new();
-    private int currentAICheckpointIndex = 0;
 
     //DEBUG
     private bool showPoints = false;
@@ -46,8 +48,8 @@ public class RaceController : MonoBehaviour
         Debug.Log("Track distance: " + track.Distance);
 
         //drawer.DrawPoints(track, true);
-        drawer.DrawCurvedPoints(track, showPoints);
-        trackCollider.GenerateTrackCollider();
+        drawer.DrawCurvedPoints(track, trackWidth, showPoints);
+        trackCollider.GenerateTrackCollider(track.CurveResolutionPoints, trackWidth);
 
         GenerateCheckpoints();
     }
@@ -121,21 +123,72 @@ public class RaceController : MonoBehaviour
 
         //TODO: Validar que el Collider2D és la IA i no el jugador
 
-        if (checkpointIndex == currentAICheckpointIndex)
+        if (checkpointIndex == AIAgent.CheckpointsCrossed)
         {
             AIAgent.OnReachCheckpoint();
             checkpoints[checkpointIndex].GetComponent<SpriteRenderer>().enabled = showOtherCheckpoints;
             checkpoints[(checkpointIndex + 1) % checkpoints.Count].GetComponent<SpriteRenderer>().enabled = true;
             Debug.Log("Car crossed the correct checkpoint!");
-
-            currentAICheckpointIndex++;
         }
+    }
+
+    public void OnBorderTriggerExit(Collider2D other)
+    {
+        if (other.CompareTag("Car"))
+        {
+            if (!IsCarInsideTrack(other.gameObject.transform.position))
+            {
+                if (AIAgent.GetComponent<Collider2D>() == other) AIAgent.OnOutOfTrack();
+
+                other.GetComponent<CarController>().ChangeSpriteColor(Color.red);
+            }
+            else other.GetComponent<CarController>().ChangeSpriteColor(Color.white);
+        }
+    }
+
+    private bool IsCarInsideTrack(Vector3 position)
+    {
+        List<Vector2> trackPoints = track.CurveResolutionPoints;
+
+        for (int i = 0; i < trackPoints.Count - 1; i++)
+        {
+            Vector2 segmentStart = trackPoints[i];
+            Vector2 segmentEnd = trackPoints[i + 1];
+
+            // Calculate the closest point on this track segment to the car
+            Vector2 closestPoint = GetClosestPointOnLineSegment(position, segmentStart, segmentEnd);
+
+            // Calculate the distance from car to this closest point
+            float distance = Vector2.Distance(position, closestPoint);
+
+            // If this distance is less than half track width, car is inside the track
+            if (distance <= trackWidth / 2f) return true;
+        }
+
+        return false;
+    }
+
+    private Vector2 GetClosestPointOnLineSegment(Vector2 point, Vector2 lineStart, Vector2 lineEnd)
+    {
+        Vector2 lineDirection = lineEnd - lineStart;
+        float lineLength = lineDirection.magnitude;
+
+        lineDirection.Normalize();
+
+        // Calculate projection of point onto line
+        float projection = Vector2.Dot(point - lineStart, lineDirection);
+
+        // Clamp projection to line segment
+        projection = Mathf.Clamp(projection, 0, lineLength);
+
+        // Calculate closest point
+        return lineStart + projection * lineDirection;
     }
 
     public void ToggleShowPoints()
     {
         showPoints = !showPoints;
-        drawer.DrawCurvedPoints(track, showPoints);
+        drawer.DrawCurvedPoints(track, trackWidth, showPoints);
     }
 
     public void ToggleShowOtherCheckpoints()
@@ -144,7 +197,7 @@ public class RaceController : MonoBehaviour
 
         for (int i = 0; i < checkpoints.Count; i++)
         {
-            if (i != currentAICheckpointIndex) checkpoints[i].GetComponent<SpriteRenderer>().enabled = showOtherCheckpoints;
+            if (i != AIAgent.CheckpointsCrossed) checkpoints[i].GetComponent<SpriteRenderer>().enabled = showOtherCheckpoints;
         }
     }
 }

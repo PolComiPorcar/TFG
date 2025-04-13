@@ -27,18 +27,6 @@ public class CarController : MonoBehaviour
         if (spriteRenderer == null) Debug.LogError("SpriteRenderer component is missing! Please add it to the car.");
     }
 
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.gameObject.CompareTag("Track"))
-            ChangeSpriteColor(Color.white);
-    }
-
-    void OnTriggerExit2D(Collider2D other)
-    {
-        if (other.gameObject.CompareTag("Track"))
-            ChangeSpriteColor(Color.red);
-    }
-
     public void SetInputs(float newAcceleration, float newSteering)
     {
         acceleration = newAcceleration;
@@ -99,7 +87,7 @@ public class CarController : MonoBehaviour
         Gizmos.DrawLine(start, end);
     }
 
-    private void ChangeSpriteColor(Color color)
+    public void ChangeSpriteColor(Color color)
     {
         spriteRenderer.color = color;
     }
