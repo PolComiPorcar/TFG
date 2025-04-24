@@ -16,6 +16,26 @@ public class CarController : MonoBehaviour
     private float acceleration;
     private float steering;
 
+    public float MaxSpeed
+    {
+        get { return maxSpeed; }
+    }
+    public float LinearVel
+    {
+        get { return rb.linearVelocity.magnitude; }
+    }
+    public float LateralVel
+    {
+        get { return GetLateralVel(); }
+    }
+    private float GetLateralVel()
+    {
+        float forwardVelocity = Vector2.Dot(rb.linearVelocity, transform.up);
+        Vector2 forwardVelocityVector = transform.up * forwardVelocity;
+        Vector2 lateralVelocityVector = rb.linearVelocity - forwardVelocityVector;
+
+        return lateralVelocityVector.magnitude;
+    }
 
     void Start()
     {
@@ -31,6 +51,11 @@ public class CarController : MonoBehaviour
     {
         acceleration = newAcceleration;
         steering = newSteering;
+    }
+
+    public void ResetVelocity()
+    {
+        moveForce = Vector2.zero;
     }
 
     void FixedUpdate()

@@ -31,10 +31,21 @@ public class RaceController : MonoBehaviour
     private bool showPoints = false;
     private bool showOtherCheckpoints = true;
 
+    public float TrackWidth
+    {
+        get { return trackWidth; }
+    }
+    public List<Checkpoint> Checkpoints
+    {
+        get { return checkpoints; }
+    }
+
     private void Start()
     {
         drawer = GetComponent<TrackDrawer>();
         trackCollider = GetComponent<TrackCollider>();
+
+        CreateTrack();
     }
 
     public void CreateTrack()
@@ -44,6 +55,11 @@ public class RaceController : MonoBehaviour
 
         track = new Track(seed, curveResolution);
         track.CreateFullTrack(initialNumberOfPoints, width, height, (float)maxAngleThreshold);
+
+        Vector2 startingDir = track.CurveResolutionPoints[1] - track.CurveResolutionPoints[0];
+        float startingAngle = Mathf.Atan2(startingDir.y, startingDir.x) * Mathf.Rad2Deg - 90f;
+        Quaternion startingRotation = Quaternion.Euler(0, 0, startingAngle);
+        AIAgent.SetStart(track.CurveResolutionPoints[0], startingRotation);
 
         Debug.Log("Track distance: " + track.Distance);
 
@@ -103,7 +119,7 @@ public class RaceController : MonoBehaviour
 
     private void CreateCheckpoint(Vector2 pos, Vector2 dir)
     {
-        float checkpointAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        float checkpointAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
 
         // Create checkpoint
         GameObject checkpointObj = Instantiate(checkpointPrefab, pos, Quaternion.identity);
@@ -121,14 +137,13 @@ public class RaceController : MonoBehaviour
     {
         int checkpointIndex = checkpoints.IndexOf(cp);
 
-        //TODO: Validar que el Collider2D és la IA i no el jugador
+        if (AIAgent.GetComponent<Collider2D>() == other)
+        {            
+            AIAgent.OnReachCheckpoint(checkpointIndex, checkpoints.Count);
 
-        if (checkpointIndex == AIAgent.CheckpointsCrossed)
-        {
-            AIAgent.OnReachCheckpoint();
+            //Debug Only
             checkpoints[checkpointIndex].GetComponent<SpriteRenderer>().enabled = showOtherCheckpoints;
             checkpoints[(checkpointIndex + 1) % checkpoints.Count].GetComponent<SpriteRenderer>().enabled = true;
-            Debug.Log("Car crossed the correct checkpoint!");
         }
     }
 
@@ -140,9 +155,9 @@ public class RaceController : MonoBehaviour
             {
                 if (AIAgent.GetComponent<Collider2D>() == other) AIAgent.OnOutOfTrack();
 
-                other.GetComponent<CarController>().ChangeSpriteColor(Color.red);
+                //other.GetComponent<CarController>().ChangeSpriteColor(Color.red);
             }
-            else other.GetComponent<CarController>().ChangeSpriteColor(Color.white);
+            //else other.GetComponent<CarController>().ChangeSpriteColor(Color.white);
         }
     }
 
@@ -166,6 +181,28 @@ public class RaceController : MonoBehaviour
         }
 
         return false;
+    }
+
+    public float GetDistanceToCenterLine(Vector2 position)
+    {
+        List<Vector2> trackPoints = track.CurveResolutionPoints;
+        float minDistance = float.MaxValue;
+
+        // Check each segment of the track
+        for (int i = 0; i < trackPoints.Count - 1; i++)
+        {
+            Vector2 segmentStart = trackPoints[i];
+            Vector2 segmentEnd = trackPoints[i + 1];
+
+            Vector2 closestPoint = GetClosestPointOnLineSegment(position, segmentStart, segmentEnd);
+            float distance = Vector2.Distance(position, closestPoint);
+
+            // Keep track of the minimum distance found
+            if (distance < minDistance) 
+                minDistance = distance;
+        }
+
+        return minDistance;
     }
 
     private Vector2 GetClosestPointOnLineSegment(Vector2 point, Vector2 lineStart, Vector2 lineEnd)

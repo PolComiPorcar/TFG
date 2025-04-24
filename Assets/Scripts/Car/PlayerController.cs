@@ -9,11 +9,15 @@ public class PlayerController : MonoBehaviour
         carController = GetComponent<CarController>();
     }
 
-    void Update()
+    void FixedUpdate()
     {
-        float verticalInput = Input.GetAxis("Vertical");
-        float horizontalInput = Input.GetAxis("Horizontal");
+        int forwardAction = 0;
+        if (Input.GetKey(KeyCode.W)) forwardAction = 1;
 
-        carController.SetInputs(verticalInput, horizontalInput);
+        int turnAction = 0;
+        if (Input.GetKey(KeyCode.D)) turnAction = 1;
+        if (Input.GetKey(KeyCode.A)) turnAction = -1;
+
+        carController.SetInputs(forwardAction, turnAction);
     }
 }
