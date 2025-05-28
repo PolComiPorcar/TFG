@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Rendering.UI;
 using TMPro;
+using Unity.MLAgents;
 
 public class RaceController : MonoBehaviour
 {
@@ -19,13 +20,13 @@ public class RaceController : MonoBehaviour
     [SerializeField] GameObject checkpointPrefab;
     [Range(0.1f, 2f)][SerializeField] float checkpointInterval = 0.5f;
 
-    [SerializeField] AIController AIAgent;
+    [SerializeField] List<AIController> ListAIAgents;
 
     private Track track;
     private TrackDrawer drawer;
     private TrackCollider trackCollider;
 
-    private List<Checkpoint> checkpoints = new();
+    private List<List<Checkpoint>> checkpoints = new();
 
     //DEBUG
     private bool showPoints = false;
@@ -35,15 +36,17 @@ public class RaceController : MonoBehaviour
     {
         get { return trackWidth; }
     }
-    public List<Checkpoint> Checkpoints
-    {
-        get { return checkpoints; }
-    }
 
     private void Start()
     {
         drawer = GetComponent<TrackDrawer>();
         trackCollider = GetComponent<TrackCollider>();
+
+        for (int i = 0; i < ListAIAgents.Count; i++)
+        {
+            GameObject container = new GameObject("Checkpoints " + i);
+            container.transform.parent = transform;
+        }
 
         CreateTrack();
     }
@@ -56,11 +59,6 @@ public class RaceController : MonoBehaviour
         track = new Track(seed, curveResolution);
         track.CreateFullTrack(initialNumberOfPoints, width, height, (float)maxAngleThreshold);
 
-        Vector2 startingDir = track.CurveResolutionPoints[1] - track.CurveResolutionPoints[0];
-        float startingAngle = Mathf.Atan2(startingDir.y, startingDir.x) * Mathf.Rad2Deg - 90f;
-        Quaternion startingRotation = Quaternion.Euler(0, 0, startingAngle);
-        AIAgent.SetStart(track.CurveResolutionPoints[0], startingRotation);
-
         Debug.Log("Track distance: " + track.Distance);
 
         //drawer.DrawPoints(track, true);
@@ -68,15 +66,28 @@ public class RaceController : MonoBehaviour
         trackCollider.GenerateTrackCollider(track.CurveResolutionPoints, trackWidth);
 
         GenerateCheckpoints();
+
+        for (int i = 0; i < ListAIAgents.Count; i++)
+        {
+            ListAIAgents[i].SetStart(track.CurveResolutionPoints, checkpoints[i]);
+        }
     }
 
     public void GenerateCheckpoints()
     {
-        foreach (Checkpoint cp in checkpoints)
+        foreach (List<Checkpoint> listCp in checkpoints)
         {
-            if (cp != null) Destroy(cp.gameObject);
+            foreach (Checkpoint cp in listCp)
+            {
+                if (cp != null) Destroy(cp.gameObject);
+            }
         }
         checkpoints.Clear();
+
+        foreach (AIController agent in ListAIAgents)
+        {
+            checkpoints.Add(new List<Checkpoint>());
+        }
 
         int nCheckpoints = (int)(track.Distance / checkpointInterval);
         float distanceBetween = track.Distance / nCheckpoints;
@@ -98,7 +109,7 @@ public class RaceController : MonoBehaviour
             // Check if we need to place checkpoints in this segment
             while (nextCheckpointAt >= distanceTraveled && nextCheckpointAt <= distanceTraveled + segmentLength)
             {
-                if (checkpoints.Count == nCheckpoints) return;
+                if (checkpoints[0].Count == nCheckpoints) return;
 
                 // Calculate position within segment
                 float segmentPosition = (nextCheckpointAt - distanceTraveled) / segmentLength;
@@ -114,37 +125,49 @@ public class RaceController : MonoBehaviour
             distanceTraveled += segmentLength;
         }
 
-        if (checkpoints.Count != nCheckpoints) CreateCheckpoint(trackPoints[0], (trackPoints[1] - trackPoints[0]).normalized);
+        if (checkpoints[0].Count != nCheckpoints) CreateCheckpoint(trackPoints[0], (trackPoints[1] - trackPoints[0]).normalized);
     }
 
     private void CreateCheckpoint(Vector2 pos, Vector2 dir)
     {
         float checkpointAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
 
-        // Create checkpoint
-        GameObject checkpointObj = Instantiate(checkpointPrefab, pos, Quaternion.identity);
-        checkpointObj.name = $"Checkpoint_{checkpoints.Count}";
-        checkpointObj.transform.rotation = Quaternion.Euler(0, 0, checkpointAngle);
+        for (int i = 0; i < ListAIAgents.Count; i++)
+        {
+            // Create checkpoint
+            GameObject checkpointObj = Instantiate(checkpointPrefab, pos, Quaternion.identity);
+            checkpointObj.transform.localScale = new Vector3(trackWidth, 0.1f, 1);
+            checkpointObj.name = $"Checkpoint_{checkpoints[i].Count}";
+            checkpointObj.transform.rotation = Quaternion.Euler(0, 0, checkpointAngle);
+            checkpointObj.transform.SetParent(this.gameObject.transform.GetChild(i), worldPositionStays: true);
+            checkpointObj.layer = LayerMask.NameToLayer("Checkpoint" + (i + 1));
+            checkpointObj.SetActive(false);
 
-        // Add event listener
-        Checkpoint checkpoint = checkpointObj.GetComponent<Checkpoint>();
-        checkpoint.OnCheckpointEntered.AddListener(HandleCheckpointTrigger);
+            // Add event listener
+            Checkpoint checkpoint = checkpointObj.GetComponent<Checkpoint>();
+            checkpoint.OnCheckpointEntered.AddListener(HandleCheckpointTrigger);
 
-        checkpoints.Add(checkpoint);
+            checkpoints[i].Add(checkpoint);
+        }
     }
 
     private void HandleCheckpointTrigger(Checkpoint cp, Collider2D other)
     {
-        int checkpointIndex = checkpoints.IndexOf(cp);
-
-        if (AIAgent.GetComponent<Collider2D>() == other)
-        {            
-            AIAgent.OnReachCheckpoint(checkpointIndex, checkpoints.Count);
-
-            //Debug Only
-            checkpoints[checkpointIndex].GetComponent<SpriteRenderer>().enabled = showOtherCheckpoints;
-            checkpoints[(checkpointIndex + 1) % checkpoints.Count].GetComponent<SpriteRenderer>().enabled = true;
+        int indexAgent = 0;
+        while (indexAgent < ListAIAgents.Count)
+        {
+            if (ListAIAgents[indexAgent].GetComponent<Collider2D>() == other) break;
+            else indexAgent++;
         }
+
+        if (indexAgent >= ListAIAgents.Count) return;
+
+        int checkpointIndex = checkpoints[indexAgent].IndexOf(cp);
+        ListAIAgents[indexAgent].OnReachCheckpoint(checkpointIndex, checkpoints[indexAgent].Count);
+
+        /*//Debug Only
+        checkpoints[checkpointIndex].GetComponent<SpriteRenderer>().enabled = showOtherCheckpoints;
+        checkpoints[(checkpointIndex + 1) % checkpoints.Count].GetComponent<SpriteRenderer>().enabled = true;*/
     }
 
     public void OnBorderTriggerExit(Collider2D other)
@@ -153,7 +176,16 @@ public class RaceController : MonoBehaviour
         {
             if (!IsCarInsideTrack(other.gameObject.transform.position))
             {
-                if (AIAgent.GetComponent<Collider2D>() == other) AIAgent.OnOutOfTrack();
+                int indexAgent = 0;
+                while (indexAgent < ListAIAgents.Count)
+                {
+                    if (ListAIAgents[indexAgent].GetComponent<Collider2D>() == other) break;
+                    else indexAgent++;
+                }
+
+                if (indexAgent >= ListAIAgents.Count) return;
+
+                ListAIAgents[indexAgent].OnOutOfTrack();
 
                 //other.GetComponent<CarController>().ChangeSpriteColor(Color.red);
             }
@@ -183,28 +215,6 @@ public class RaceController : MonoBehaviour
         return false;
     }
 
-    public float GetDistanceToCenterLine(Vector2 position)
-    {
-        List<Vector2> trackPoints = track.CurveResolutionPoints;
-        float minDistance = float.MaxValue;
-
-        // Check each segment of the track
-        for (int i = 0; i < trackPoints.Count - 1; i++)
-        {
-            Vector2 segmentStart = trackPoints[i];
-            Vector2 segmentEnd = trackPoints[i + 1];
-
-            Vector2 closestPoint = GetClosestPointOnLineSegment(position, segmentStart, segmentEnd);
-            float distance = Vector2.Distance(position, closestPoint);
-
-            // Keep track of the minimum distance found
-            if (distance < minDistance) 
-                minDistance = distance;
-        }
-
-        return minDistance;
-    }
-
     private Vector2 GetClosestPointOnLineSegment(Vector2 point, Vector2 lineStart, Vector2 lineEnd)
     {
         Vector2 lineDirection = lineEnd - lineStart;
@@ -230,11 +240,11 @@ public class RaceController : MonoBehaviour
 
     public void ToggleShowOtherCheckpoints()
     {
-        showOtherCheckpoints = !showOtherCheckpoints;
+        /*showOtherCheckpoints = !showOtherCheckpoints;
 
         for (int i = 0; i < checkpoints.Count; i++)
         {
             if (i != AIAgent.CheckpointsCrossed) checkpoints[i].GetComponent<SpriteRenderer>().enabled = showOtherCheckpoints;
-        }
+        }*/
     }
 }
