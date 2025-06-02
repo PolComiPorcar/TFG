@@ -87,11 +87,6 @@ public class Track
         return true;
     }
 
-    public void ConstructConvexHull()
-    {
-        _track = ConvexHull.Construct(_track);
-    }
-
     private void CreateTrackFromHull()
     {
         _track.Add(_track[0]);

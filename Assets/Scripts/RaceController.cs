@@ -21,6 +21,7 @@ public class RaceController : MonoBehaviour
     [Range(0.1f, 2f)][SerializeField] float checkpointInterval = 0.5f;
 
     [SerializeField] List<AIController> ListAIAgents;
+    [SerializeField] PlayerController player;
 
     private Track track;
     private TrackDrawer drawer;
@@ -30,7 +31,6 @@ public class RaceController : MonoBehaviour
 
     //DEBUG
     private bool showPoints = false;
-    private bool showOtherCheckpoints = true;
 
     public float TrackWidth
     {
@@ -62,6 +62,7 @@ public class RaceController : MonoBehaviour
         Debug.Log("Track distance: " + track.Distance);
 
         //drawer.DrawPoints(track, true);
+        //drawer.DrawConvexHull(track);
         drawer.DrawCurvedPoints(track, trackWidth, showPoints);
         trackCollider.GenerateTrackCollider(track.CurveResolutionPoints, trackWidth);
 
@@ -71,6 +72,8 @@ public class RaceController : MonoBehaviour
         {
             ListAIAgents[i].SetStart(track.CurveResolutionPoints, checkpoints[i]);
         }
+
+        player.SetStart(track.CurveResolutionPoints);
     }
 
     public void GenerateCheckpoints()
@@ -164,10 +167,6 @@ public class RaceController : MonoBehaviour
 
         int checkpointIndex = checkpoints[indexAgent].IndexOf(cp);
         ListAIAgents[indexAgent].OnReachCheckpoint(checkpointIndex, checkpoints[indexAgent].Count);
-
-        /*//Debug Only
-        checkpoints[checkpointIndex].GetComponent<SpriteRenderer>().enabled = showOtherCheckpoints;
-        checkpoints[(checkpointIndex + 1) % checkpoints.Count].GetComponent<SpriteRenderer>().enabled = true;*/
     }
 
     public void OnBorderTriggerExit(Collider2D other)
@@ -176,20 +175,27 @@ public class RaceController : MonoBehaviour
         {
             if (!IsCarInsideTrack(other.gameObject.transform.position))
             {
-                int indexAgent = 0;
-                while (indexAgent < ListAIAgents.Count)
+                if (other.TryGetComponent<PlayerController>(out PlayerController playerController))
                 {
-                    if (ListAIAgents[indexAgent].GetComponent<Collider2D>() == other) break;
-                    else indexAgent++;
+                    // Handle player out of track
+                    playerController.OnOutOfTrack();
                 }
+                else
+                {
+                    int indexAgent = 0;
+                    while (indexAgent < ListAIAgents.Count)
+                    {
+                        if (ListAIAgents[indexAgent].GetComponent<Collider2D>() == other) break;
+                        else indexAgent++;
+                    }
 
-                if (indexAgent >= ListAIAgents.Count) return;
+                    if (indexAgent >= ListAIAgents.Count) return;
 
-                ListAIAgents[indexAgent].OnOutOfTrack();
-
-                //other.GetComponent<CarController>().ChangeSpriteColor(Color.red);
+                    ListAIAgents[indexAgent].OnOutOfTrack();
+                }
+                //other.GetComponent<CarController>().ChangeSpriteColor(Color.red); //DEBUG
             }
-            //else other.GetComponent<CarController>().ChangeSpriteColor(Color.white);
+            //else other.GetComponent<CarController>().ChangeSpriteColor(Color.white); //DEBUG
         }
     }
 
@@ -236,15 +242,5 @@ public class RaceController : MonoBehaviour
     {
         showPoints = !showPoints;
         drawer.DrawCurvedPoints(track, trackWidth, showPoints);
-    }
-
-    public void ToggleShowOtherCheckpoints()
-    {
-        /*showOtherCheckpoints = !showOtherCheckpoints;
-
-        for (int i = 0; i < checkpoints.Count; i++)
-        {
-            if (i != AIAgent.CheckpointsCrossed) checkpoints[i].GetComponent<SpriteRenderer>().enabled = showOtherCheckpoints;
-        }*/
     }
 }

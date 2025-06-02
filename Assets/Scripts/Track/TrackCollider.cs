@@ -5,30 +5,16 @@ using UnityEngine.Events;
 
 public class TrackCollider : MonoBehaviour
 {
-    //private LineRenderer lineRenderer;
-    //private PolygonCollider2D polygonCollider;
-
     [SerializeField] GameObject borderPrefab;
 
     private GameObject leftBorderObject;
     private GameObject rightBorderObject;
 
-    private float lineWidth;
-
     public void GenerateTrackCollider(List<Vector2> trackPoints, float width)
     {
         trackPoints.RemoveRange(trackPoints.Count - 2, 2);
 
-        lineWidth = width;
-
-        if (!leftBorderObject) {
-            leftBorderObject = Instantiate(borderPrefab, transform.position, Quaternion.identity, transform);
-            leftBorderObject.name = "leftBorder";
-        }
-        if (!rightBorderObject) {
-            rightBorderObject = Instantiate(borderPrefab, transform.position, Quaternion.identity, transform);
-            rightBorderObject.name = "RightBorder";
-        }
+        InitializeGameObjects();
 
         EdgeCollider2D leftBorder = leftBorderObject.GetComponent<EdgeCollider2D>();
         EdgeCollider2D rightBorder = rightBorderObject.GetComponent<EdgeCollider2D>();
@@ -48,24 +34,21 @@ public class TrackCollider : MonoBehaviour
                 Vector2 nextDir = (trackPoints[i + 1] - trackPoints[i]).normalized;
                 Vector2 dir = (prevDir + nextDir).normalized;
 
-                // Perpendicular to direction
-                normal = new Vector2(-dir.y, dir.x);
+                normal = new Vector2(-dir.y, dir.x); // Perpendicular to direction
             }
-            else if (i == 0)
+            else if (i == 0) // For first point
             {
-                // For first point
                 Vector2 dir = (trackPoints[1] - trackPoints[0]).normalized;
                 normal = new Vector2(-dir.y, dir.x);
             }
-            else
-            {
-                // For last point
+            else // For last point
+            { 
                 Vector2 dir = (trackPoints[i] - trackPoints[i - 1]).normalized;
                 normal = new Vector2(-dir.y, dir.x);
             }
 
             // Apply offset using the normal
-            float halfWidth = lineWidth / 2f;
+            float halfWidth = width / 2f;
             leftBorderPoints.Add(trackPoints[i] + normal * halfWidth);
             rightBorderPoints.Add(trackPoints[i] - normal * halfWidth);
         }
@@ -80,6 +63,20 @@ public class TrackCollider : MonoBehaviour
         // Assign points to colliders
         leftBorder.points = leftBorderPoints.ToArray();
         rightBorder.points = rightBorderPoints.ToArray();
+    }
+
+    private void InitializeGameObjects()
+    {
+        if (!leftBorderObject)
+        {
+            leftBorderObject = Instantiate(borderPrefab, transform.position, Quaternion.identity, transform);
+            leftBorderObject.name = "leftBorder";
+        }
+        if (!rightBorderObject)
+        {
+            rightBorderObject = Instantiate(borderPrefab, transform.position, Quaternion.identity, transform);
+            rightBorderObject.name = "RightBorder";
+        }
     }
 
     private void ProcessBorderForSelfIntersections(List<Vector2> borderPoints)

@@ -191,8 +191,6 @@ public class AIController : Agent
             else SRSquareFinishedRace.color = Color.red;
         }
 
-        //ResetTimer();
-
         foreach (Checkpoint cp in trackCheckpoints) {
             cp.gameObject.SetActive(false);
         }
@@ -204,15 +202,8 @@ public class AIController : Agent
         EndEpisode();
     } 
 
-    /*public void ResetTimer()
-    {
-        timerValue = timerDuration;
-    }*/
-
     public void OnReachCheckpoint(int checkpointIndex, int nCheckpoints)
     {
-        //ResetTimer();
-
         if (checkpointIndex == checkpointsCrossed) // is the next checkpoint
         {
             trackCheckpoints[checkpointIndex].gameObject.SetActive(false);

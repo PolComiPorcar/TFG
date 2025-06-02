@@ -18,10 +18,35 @@ public class TrackDrawer : MonoBehaviour
         lineRenderer = GetComponent<LineRenderer>();
     }
 
-    /*public float LineWidth
+    public void DrawConvexHull(Track track)
     {
-        get { lineRenderer.startWidth };
-    }*/
+        ClearDrawnPoints();
+
+        List<Vector2> points = new();
+
+        for (int i = 0; i < track.Count; i++) {
+            points.Add(track[i]);
+        }
+
+        List<Vector2> ch = ConvexHull.Construct(points);
+
+        lineRenderer.positionCount = ch.Count;
+
+        for (int i = 0; i < track.Count; i++)
+        {
+            Vector3 pointPos = new Vector3(track[i].x, track[i].y, 0);
+
+            GameObject newPoint = Instantiate(pointPrefab, pointPos, Quaternion.identity);
+            drawnPoints.Add(newPoint);
+        }
+
+        for (int i = 0; i < ch.Count; i++)
+        {
+            Vector3 pointPos = new Vector3(ch[i].x, ch[i].y, 0);
+
+            lineRenderer.SetPosition(i, pointPos);
+        }
+    }
 
     public void DrawPoints(Track track, bool drawLines)
     {
@@ -35,7 +60,7 @@ public class TrackDrawer : MonoBehaviour
 
             GameObject newPoint = Instantiate(pointPrefab, pointPos, Quaternion.identity);
             drawnPoints.Add(newPoint);
-            lineRenderer.SetPosition(i, pointPos);
+            if (drawLines) lineRenderer.SetPosition(i, pointPos);
         }
     }
 

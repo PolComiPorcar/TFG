@@ -7,64 +7,6 @@ using UnityEngine;
 
 public static class TSP
 {
-    /*public static List<Vector2> Construct(List<Vector2> points, int seed, int iterations = 2000)
-    {
-        Random.InitState(seed);
-
-        var list = new List<Vector2>(points);
-
-        list.Add(list[0]);
-        int count = list.Count - 1;
-
-        // Track the best solution
-        List<Vector2> best = new List<Vector2>(list);
-        float bestLen = MeasureLength(list);
-
-        // Simulated Annealing algorithm implementation
-        for (int i = 0; i < iterations; i++)
-        {
-            float len = MeasureLength(list);
-
-            // Select two random distinct indices
-            int id1 = Random.Range(0, count);
-            int id2;
-            do id2 = Random.Range(0, count); while (id2 == id1);
-
-            // Ensure id1 < id2
-            if (id2 < id1)
-                Swap(ref id1, ref id2);
-
-            // Create new candidate solution by reversing segment
-            var newPoints = ReversePoints(list, id1, id2);
-            float newLen = MeasureLength(newPoints);
-
-            // Calculate temperature and acceptance probability
-            float k = 100;
-            float T = ((1.0f + k) / (i + 1 + k)) / 2;
-            float p = Mathf.Exp(-(newLen - len) / (T * 100)) / 2;
-
-            // Decide whether to accept new solution
-            if (newLen > len && Random.value > p)
-            {
-                // Reject the new configuration
-            }
-            else
-            {
-                // Accept the new configuration
-                list = newPoints;
-
-                // Update best solution if this is better
-                if (newLen < bestLen)
-                {
-                    bestLen = newLen;
-                    best = new List<Vector2>(list);
-                }
-            }
-        }
-
-        return best;
-    }*/
-
     public static List<Vector2> ConstructPlanarTSP(List<Vector2> points, float maxAngleThreshold = 160f)
     {
         // Step 1: Start with a convex hull of the points
@@ -117,7 +59,6 @@ public static class TSP
         while (angle > maxAngleThreshold)
         {
             totalPointsEliminated++;
-            //Debug.Log("index: " + index + " (" + points[index] + "), angleMax: " + maxAngle);
 
             int nextIndex = (index + 1) % points.Count;
             points.RemoveAt(nextIndex); // Eliminem el punt que genera l'angle conflictiu.
@@ -126,14 +67,6 @@ public static class TSP
         }
 
         Debug.Log("Total steep points eliminated: " + totalPointsEliminated);
-
-        /*if (maxAngle > maxAngleThreshold)
-        {
-            if (Vector2.Distance(points[index], points[nextIndex]) < Vector2.Distance(points[nextIndex], points[nextnextIndex]))
-                Swap(points, index, nextIndex); // swap i and i+1
-            else
-                Swap(points, nextIndex, nextnextIndex); //swap i+1 and i+2
-        }*/
     }
 
     // Retorna l'angle més gran entre els punts i l'index del primer punt que crea un angle amb i+1 i i+2 a la variable index
@@ -158,54 +91,5 @@ public static class TSP
         }
 
         return (maxAngle, index);
-    }
-
-    private static float MeasureLength(List<Vector2> points)
-    {
-        float length = 0;
-        for (int i = 1; i < points.Count; i++)
-        {
-            length += Vector2.Distance(points[i], points[i - 1]);
-        }
-        return length;
-    }
-
-    private static void Swap<T>(ref T lhs, ref T rhs)
-    {
-        T temp = lhs;
-        lhs = rhs;
-        rhs = temp;
-    }
-
-    private static void Swap(List<Vector2> points, int index1, int index2)
-    {
-        Vector2 temp = points[index1];
-        points[index1] = points[index2];
-        points[index2] = temp;
-    }
-
-    private static List<Vector2> ReversePoints(List<Vector2> points, int start, int stop)
-    {
-        List<Vector2> result = new List<Vector2>(points.Count);
-
-        // Add points before the reversal segment
-        for (int i = 0; i < start; i++)
-        {
-            result.Add(points[i]);
-        }
-
-        // Add the reversed segment
-        for (int i = stop; i >= start; i--)
-        {
-            result.Add(points[i]);
-        }
-
-        // Add points after the reversal segment
-        for (int i = stop + 1; i < points.Count; i++)
-        {
-            result.Add(points[i]);
-        }
-
-        return result;
     }
 }
